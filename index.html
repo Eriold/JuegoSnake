@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <center>
+        <canvas id="canvas" width="300" height="300" style="border:1px solid #000;"></canvas>
+        <div>
+            <input id="txtButton" readonly="true" style="width: 100;" type="text" />
+            <input id="txtState" readonly="true" style="width: 140; " type="text" />
+        </div>
+    </center>
+</body>
+
+<script>
+    class Game {
+        Snake = [];
+        director = null;
+        direction = 2;
+        sizeSquare = 10;
+        canvas = null;
+
+        constructor(txtButton, txtState, canvas) {
+            this.txtButton = txtButton;
+            this.txtState = txtState;
+            this.canvas = canvas;
+
+            this.ctx = this.canvas.getContext("2d");
+        }
+
+        Init() {
+            this.PrintState("Inicia");
+
+            let square = new Object();
+            square.X = 15;
+            square.Y = 15;
+            this.Snake.push(square);
+
+            document.addEventListener("keypress", (e) => {
+                oGame.Printkey(e.key + " " + e.keyCode);
+
+                switch (e.keyCode) {
+                    case 119:
+                        oGame.direction = 1;
+                        break;
+                    case 100:
+                        oGame.direction = 2;
+                        break;
+                    case 115:
+                        oGame.direction = 3;
+                        break;
+                    case 97:
+                        oGame.direction = 4;
+                        break;
+                }
+            })
+
+            this.director = setInterval(() => {
+                this.Next();
+                this.Show();
+            }, 300);
+
+
+        }
+
+        Next() {
+            this.PrintState("Mueve: " + this.direction);
+            switch (this.direction) {
+                case 1:
+                    this.Snake[0].Y--;
+                    break;
+                case 2:
+                    this.Snake[0].X++;
+                    break;
+                case 3:
+                    this.Snake[0].Y++;
+                    break;
+                case 4:
+                    this.Snake[0].X--;
+                    break;
+            }
+
+        }
+
+        Show() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.Snake.map((square) => {
+                let drawing = new Image();
+                drawing.src = "face.png";
+                this.ctx.drawImage(drawing,
+                    square.X * this.sizeSquare,
+                    square.Y * this.sizeSquare);
+
+                // this.ctx.fillStyle = "black";
+                // this.ctx.fillRect(square.X * this.sizeSquare,
+                //     square.Y * this.sizeSquare,
+                //     this.sizeSquare,
+                //     this.sizeSquare);
+            })
+        }
+
+        PrintState(text) {
+            this.txtState.value = text;
+        }
+
+        Printkey(text) {
+            this.txtButton.value = text;
+        }
+
+
+    }
+
+    var oGame = new Game(txtButton, txtState, canvas);
+    oGame.Init();
+</script>
+
+</html>
