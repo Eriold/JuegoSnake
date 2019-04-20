@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 </head>
 
 <body>
@@ -42,10 +43,15 @@
         sizeSquare = 10;
         canvas = null;
         food = null;
+
         //Partes del juego
         head = new Image();
+        tail = new Image();
         apple = new Image();
         scream = new sound("crunch.wav");
+        lose = new Image();
+
+        IsLost = false;
 
         constructor(txtButton, txtState, canvas) {
             this.txtButton = txtButton;
@@ -56,6 +62,8 @@
 
             this.head.src = "face.png";
             this.apple.src = "apple1.png";
+            //this.tail.src = "asja";
+            this.lose.src = "perdiste.jpg";
         }
 
         Init() {
@@ -64,6 +72,8 @@
             let square = new Object();
             square.X = 15;
             square.Y = 15;
+            square.X_old = 15;
+            square.Y_old = 15;
             this.Snake.push(square);
 
             document.addEventListener("keypress", e => {
@@ -71,30 +81,66 @@
 
                 switch (e.keyCode) {
                     case 119:
-                        oGame.direction = 1;
+                        if (oGame.direction != 3)
+                            oGame.direction = 1;
                         break;
                     case 100:
-                        oGame.direction = 2;
+                        if (oGame.direction != 4)
+                            oGame.direction = 2;
                         break;
                     case 115:
-                        oGame.direction = 3;
+                        if (oGame.direction != 1)
+                            oGame.direction = 3;
                         break;
                     case 97:
-                        oGame.direction = 4;
+                        if (oGame.direction != 2)
+                            oGame.direction = 4;
                         break;
                 }
             })
 
             this.director = setInterval(() => {
-                this.Next();
-                this.Show();
+                this.Rules();
+                if (!this.IsLost) {
+                    this.Next();
+                    this.Show();
+                } else {
+                    clearInterval(this.director);
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.drawImage(this.lose, 0, 0);
+                }
             }, 100);
-
-
         }
+        Rules() {
+            //regla 1, colición
+            for (let j = 0; j < this.Snake.length; j++) {
+                for (let i = 0; i < this.Snake.length; i++) {
+                    if (j != i) {
+                        if (this.Snake[j].X == this.Snake[i].X &&
+                            this.Snake[j].Y == this.Snake[i].Y
+                        )
+                            this.IsLost = true;
+                    }
+                }
+            }
 
+            //regla 2, salir de pantalla
+            if (this.Snake[0].X >= 30 || this.Snake[0].X < 0 ||
+                this.Snake[0].Y >= 30 || this.Snake[0].Y < 0
+            )
+                this.IsLost = true;
+        }
         Next() {
             this.PrintState("Mueve: " + this.direction);
+            if (this.food == null)
+                this.getFood();
+
+            this.Snake.map(square => {
+                square.X_old = square.X;
+                square.Y_old = square.Y;
+            })
+
+
             switch (this.direction) {
                 case 1:
                     this.Snake[0].Y--;
@@ -109,9 +155,15 @@
                     this.Snake[0].X--;
                     break;
             }
-            if (this.food == null)
-                this.getFood();
-            else
+
+            this.Snake.map((square, index, Snake) => {
+                if (index != 0) {
+                    square.X = Snake[index - 1].X_old;
+                    square.Y = Snake[index - 1].Y_old;
+                }
+            })
+
+            if (this.food != null)
                 this.IsEating();
 
 
@@ -119,10 +171,19 @@
 
         Show() {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.Snake.map((square) => {
-                this.ctx.drawImage(this.head,
-                    square.X * this.sizeSquare,
-                    square.Y * this.sizeSquare);
+            this.Snake.map((square, index) => {
+                if (index == 0)
+                    this.ctx.drawImage(this.head,
+                        square.X * this.sizeSquare,
+                        square.Y * this.sizeSquare);
+                else {
+                    this.ctx.fillStyle = "pink";
+                    this.ctx.fillRect(
+                        square.X * this.sizeSquare,
+                        square.Y * this.sizeSquare,
+                        this.sizeSquare,
+                        this.sizeSquare);
+                }
             });
 
             if (this.food != null)
@@ -141,6 +202,11 @@
             if (this.Snake[0].X == this.food.X && this.Snake[0].Y == this.food.Y) {
                 this.food = null;
                 this.scream.play();
+
+                let square = new Object();
+                square.X = this.Snake[this.Snake.length - 1].X_old;
+                square.Y = this.Snake[this.Snake.length - 1].Y_old;
+                this.Snake.push(square);
 
             }
         }
